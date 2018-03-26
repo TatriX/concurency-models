@@ -19,17 +19,22 @@ type ChopstickHandle = Arc<Mutex<Chopstick>>;
 struct Philosopher {
     id: usize,
     think_count: usize,
-    left: ChopstickHandle,
-    right: ChopstickHandle,
+    first: ChopstickHandle,
+    second: ChopstickHandle,
 }
 
 impl Philosopher {
-    fn new(id: usize, left: ChopstickHandle, right: ChopstickHandle) -> Philosopher {
+    fn new(id: usize, first: ChopstickHandle, second: ChopstickHandle) -> Philosopher {
+        let (first, second) = if first.lock().unwrap().id > second.lock().unwrap().id {
+            (first, second)
+        } else {
+            (second, first)
+        };
         Philosopher {
             think_count: 0,
             id,
-            left,
-            right,
+            first,
+            second,
         }
     }
 
@@ -41,10 +46,10 @@ impl Philosopher {
 
     fn eat(&self) {
         let mut rng = thread_rng();
-        let left = self.left.clone();
-        let _left = left.lock().unwrap();
-        let right = self.right.clone();
-        let _second = right.lock().unwrap();
+        let first = self.first.clone();
+        let _first = first.lock().unwrap();
+        let second = self.second.clone();
+        let _second = second.lock().unwrap();
         thread::sleep(Duration::from_millis(rng.gen_range(0, EAT_DURATION_MS)));
     }
 }
@@ -58,10 +63,10 @@ fn main() {
 
     let mut philosopher_handles = vec![];
     for id in 0..NUM {
-        let left = chopsticks[id].clone();
-        let right = chopsticks[(id + 1) % NUM].clone();
+        let first = chopsticks[id].clone();
+        let second = chopsticks[(id + 1) % NUM].clone();
 
-        let mut philosopher = Philosopher::new(id, left, right);
+        let mut philosopher = Philosopher::new(id, first, second);
         let handle = thread::spawn(move || loop {
             philosopher.think();
             if philosopher.think_count % 10 == 0 {
