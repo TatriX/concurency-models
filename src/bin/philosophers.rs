@@ -52,30 +52,28 @@ impl Philosopher {
 fn main() {
     const NUM: usize = 5;
 
-    let chopsticks: Vec<_> = (0..NUM)
+    let chopsticks = (0..NUM)
         .map(|id| Arc::new(Mutex::new(Chopstick { id })))
-        .collect();
+        .collect::<Vec<_>>();
 
-    let mut philosopher_handles = vec![];
-    for id in 0..NUM {
-        let left = chopsticks[id].clone();
-        let right = chopsticks[(id + 1) % NUM].clone();
+    (0..NUM)
+        .map(|id| {
+            let left = chopsticks[id].clone();
+            let right = chopsticks[(id + 1) % NUM].clone();
 
-        let mut philosopher = Philosopher::new(id, left, right);
-        let handle = thread::spawn(move || loop {
-            philosopher.think();
-            if philosopher.think_count % 10 == 0 {
-                println!(
-                    "Philosopher {} has thought {} times",
-                    philosopher.id, philosopher.think_count
-                );
-            }
-            philosopher.eat();
-        });
-        philosopher_handles.push(handle);
-    }
-
-    philosopher_handles
+            let mut philosopher = Philosopher::new(id, left, right);
+            thread::spawn(move || loop {
+                philosopher.think();
+                if philosopher.think_count % 10 == 0 {
+                    println!(
+                        "Philosopher {} has thought {} times",
+                        philosopher.id, philosopher.think_count
+                    );
+                }
+                philosopher.eat();
+            })
+        })
+        .collect::<Vec<_>>()
         .into_iter()
         .for_each(|handle| handle.join().unwrap());
 }
