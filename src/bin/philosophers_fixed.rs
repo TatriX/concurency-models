@@ -8,14 +8,12 @@ use rand::{thread_rng, Rng};
 const THINK_DURATION_MS: u64 = 10;
 const EAT_DURATION_MS: u64 = 10;
 
-#[derive(Debug, Clone)]
 struct Chopstick {
     id: usize,
 }
 
 type ChopstickHandle = Arc<Mutex<Chopstick>>;
 
-#[derive(Debug, Clone)]
 struct Philosopher {
     id: usize,
     think_count: usize,
@@ -58,7 +56,9 @@ fn main() {
     const NUM: usize = 5;
 
     let chopsticks = (0..NUM)
-        .map(|id| Arc::new(Mutex::new(Chopstick { id })))
+        .map(|id| Chopstick { id })
+        .map(Mutex::new)
+        .map(Arc::new)
         .collect::<Vec<_>>();
 
     (0..NUM)
